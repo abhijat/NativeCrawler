@@ -2,3 +2,4 @@ test_data
 *swp
 main
 curl_helpers
+xml_parser.o

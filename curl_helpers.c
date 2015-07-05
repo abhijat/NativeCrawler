@@ -1,6 +1,6 @@
 #include "curl_helpers.h"
 
-const unsigned BUFSIZE = 512;
+const unsigned BUFSIZE = 8192;
 const unsigned MAX_URL = 256;
 
 void free_string(string_t* s)
@@ -44,6 +44,7 @@ string_t read_url(const char* url)
         .size = -1,
         .capacity = -1
     };
+
     CURL* curl;
     curl = curl_easy_init();
 
@@ -56,6 +57,7 @@ string_t read_url(const char* url)
     s.capacity = BUFSIZE;
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
+    //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
