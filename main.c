@@ -1,4 +1,4 @@
-#include <curl/curl.h>
+#include "curl_helpers.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -54,11 +54,13 @@ element_t element;
 
 void callback(void* data, const xmlChar* name, const xmlChar** attrs)
 {
-    /*printf("Beginning with %s\n", name);
+    /*
+    printf("Beginning with %s\n", name);
     while (NULL != attrs && NULL != attrs[0]) {
         printf("attribute %s=%s\n", attrs[0], attrs[1]);
         attrs = &attrs[2];
-    }*/
+    }
+    */
 
     memset(element.str, 0, 1024);
     element.size = 0;
@@ -72,22 +74,29 @@ void data_callback(void* data, const xmlChar* ch, int size)
     char buf[size + 1];
     strncpy(buf, (const char*)ch, size);
     buf[size] = 0;
-    
-    //printf("\tData: %s\n", buf); 
-    
+
     strncat(element.str, buf, size);
     element.size += size;
 }
 
 void end_callback(void* data, const xmlChar* name)
 {
-    if (!xmlStrcmp(name, (const xmlChar*) "title")
-            || !xmlStrcmp(name, (const xmlChar*) "link")) {
-        printf("%s: %s\n", name, element.str);
+    if (!xmlStrcmp(name, (const xmlChar*) "title")) {
+        printf("===================\n"
+                "%s\n", element.str);
+    }
+
+    if (!xmlStrcmp(name, (const xmlChar*) "description")) {
+        printf("%s\n", element.str);
+    }
+
+    if (!xmlStrcmp(name, (const xmlChar*) "link")) {
+        printf("(%s)"
+                "\n===================\n\n", element.str);
     }
 }
 
-void parse_xml(const char* filename)
+void parse_xml(const string_t* str)
 {
     xmlSAXHandler sh = { 0 };
 
@@ -95,7 +104,7 @@ void parse_xml(const char* filename)
     sh.characters = data_callback;
     sh.endElement = end_callback;
 
-    xmlParserCtxtPtr ctx = xmlCreateFileParserCtxt(filename);
+    xmlParserCtxtPtr ctx = xmlCreateMemoryParserCtxt(str->buf, str->size);
     ctx->sax = &sh;
     xmlParseDocument(ctx);
 }
@@ -106,34 +115,10 @@ void query(const char* filename)
     print_results(doc, (xmlChar*) "/rss/channel/item/link");
 }
 
-void fetch_url()
-{
-    CURL* curl;
-    curl = curl_easy_init();
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, 
-                "http://www.reddit.com/r/all.xml");
-
-        FILE* fh = fopen("test_data", "w");
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fh);
-
-        printf("Fetching URL to tmp file...\n");
-        fflush(stdout);
-
-        CURLcode rc = curl_easy_perform(curl);
-        if (rc != CURLE_OK) {
-            printf("curl_easy_perform() failed with error %s\n",
-                    curl_easy_strerror(rc));
-        }
-
-        curl_easy_cleanup(curl);
-        fclose(fh);
-    }
-}
-
 int main()
 {    
-    fetch_url();
-    parse_xml("test_data");
+    string_t str = read_url("http://feeds.bbci.co.uk/news/rss.xml");
+    parse_xml(&str);
+    free(str.buf);
     return 0;
 }
