@@ -57,7 +57,10 @@ string_t read_url(const char* url)
     s.capacity = BUFSIZE;
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
-    //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "Reddit Search Native Crawler by /u/abhijat0");
+
+    //curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
@@ -68,7 +71,10 @@ string_t read_url(const char* url)
 
     string_t result = s;
     result.buf = strndup(s.buf, s.size);
+    free_string(&s);
+
     curl_easy_cleanup(curl);
+    curl = NULL;
 
     return result;
 }
